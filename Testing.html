@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Warchest Calculator - Peacetime Requirements</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap');
+        
+        body { font-family: 'Inter', sans-serif; }
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+
+        input::-webkit-outer-spin-button,
+        input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type=number] {
+            -moz-appearance: textfield;
+        }
+
+        /* Chart Styling */
+        .chart-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            border: 2px solid #000;
+            background-color: #000;
+            gap: 1px;
+        }
+        .chart-header {
+            background-color: #000;
+            color: #fff;
+            font-weight: 800;
+            text-align: center;
+            padding: 12px 4px;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .chart-cell {
+            background-color: #fff;
+            padding: 12px 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            transition: all 0.2s ease;
+        }
+        .chart-cell:focus-within {
+            background-color: #f0f9ff;
+            box-shadow: inset 0 0 0 2px #0ea5e9;
+            z-index: 10;
+        }
+        .chart-input {
+            width: 100%;
+            text-align: center;
+            font-weight: 700;
+            font-size: 1rem;
+            border: none;
+            outline: none;
+            background: transparent;
+            color: #0f172a;
+        }
+
+        .resource-icon {
+            width: 20px;
+            height: 20px;
+            object-fit: contain;
+        }
+        
+        .money-symbol {
+            font-family: 'Inter', sans-serif;
+            font-weight: 900;
+            color: #10b981; /* emerald-500 */
+            font-size: 1.25rem;
+            line-height: 1;
+        }
+
+        /* Centered Bottom Toast Animation */
+        @keyframes slideUpFade {
+            0% { opacity: 0; transform: translate(-50%, 20px); }
+            15% { opacity: 1; transform: translate(-50%, 0); }
+            85% { opacity: 1; transform: translate(-50%, 0); }
+            100% { opacity: 0; transform: translate(-50%, 10px); }
+        }
+        .toast-visible {
+            display: block !important;
+            animation: slideUpFade 2s ease-in-out forwards;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 min-h-screen py-8 px-4">
+    <!-- Centered Bottom Notification Toast -->
+    <div id="toast" class="hidden fixed bottom-12 left-1/2 -translate-x-1/2 z-[100] bg-slate-900/90 backdrop-blur-sm text-white px-5 py-2.5 rounded-full shadow-xl font-bold text-sm tracking-tight border border-slate-700/50">
+        Copied to clipboard! 📋
+    </div>
+
+    <div class="max-w-5xl mx-auto bg-white shadow-2xl overflow-hidden border border-slate-200">
+        
+        <!-- Header Section -->
+        <header class="bg-slate-900 p-8 text-white relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500"></div>
+            <div class="flex items-center justify-center gap-8 relative z-10">
+                <img src="https://politicsandwar.com/uploads/d169d0cf160f9ea6f6c41230f37c80565930142e500x333958.png" 
+                     alt="Brain Circuit Logo" 
+                     class="h-24 w-auto shadow-xl border-2 border-slate-700 bg-slate-800 p-1">
+                
+                <div class="text-left">
+                    <h1 class="text-4xl font-extrabold uppercase tracking-tighter mb-1 bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">
+                        Warchest Calculator
+                    </h1>
+                    <div class="flex items-center whitespace-nowrap">
+                        <span class="text-slate-400 text-sm font-semibold italic">Made for use in</span>
+                        <img src="https://politicsandwar.com//img/logo-dark.png" alt="Politics and War" class="h-7 w-auto brightness-200 mx-2">
+                        <span class="text-slate-400 text-sm font-semibold italic -ml-[10px]">by Singularity (SIN) members</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Tool Body -->
+        <main class="p-4 md:p-8">
+            <!-- Global Config -->
+            <div class="flex flex-col items-center justify-center mb-10 p-6 bg-slate-50 border border-slate-200 rounded-xl">
+                <label for="cityCount" class="font-bold text-slate-500 uppercase text-xs tracking-widest mb-2">Nation Size</label>
+                <div class="flex items-center gap-4">
+                    <span class="text-slate-400 font-bold text-xl uppercase">Cities</span>
+                    <input type="number" id="cityCount" value="1" min="1" 
+                           class="w-32 p-3 border-4 border-slate-900 rounded-lg text-center font-black text-3xl focus:ring-4 focus:ring-blue-200 outline-none transition-all">
+                </div>
+            </div>
+
+            <!-- Requirement Matrix -->
+            <div class="mb-10">
+                <div class="bg-slate-900 text-white text-center py-3 font-bold uppercase text-xs tracking-[0.2em] rounded-t-lg">
+                    Per-City Peacetime Targets
+                </div>
+                <div class="chart-grid">
+                    <div class="chart-header">Money</div>
+                    <div class="chart-header">Food</div>
+                    <div class="chart-header">Uranium</div>
+                    <div class="chart-header">Gas</div>
+                    <div class="chart-header">Munitions</div>
+                    <div class="chart-header">Steel</div>
+                    <div class="chart-header">Aluminum</div>
+
+                    <div class="chart-cell">
+                        <span class="money-symbol">$</span>
+                        <input type="number" id="base-money" value="1000000" class="chart-input" oninput="calculate()">
+                    </div>
+                    <div class="chart-cell">
+                        <img src="https://politicsandwar.com/img/icons/16/steak_meat.png" class="resource-icon" alt="Food">
+                        <input type="number" id="base-food" value="600" class="chart-input" oninput="calculate()">
+                    </div>
+                    <div class="chart-cell">
+                        <img src="https://politicsandwar.com/img/resources/uranium.png" class="resource-icon" alt="Uranium">
+                        <input type="number" id="base-uranium" value="15" class="chart-input" oninput="calculate()">
+                    </div>
+                    <div class="chart-cell">
+                        <img src="https://politicsandwar.com/img/resources/gasoline.png" class="resource-icon" alt="Gas">
+                        <input type="number" id="base-gasoline" value="360" class="chart-input" oninput="calculate()">
+                    </div>
+                    <div class="chart-cell">
+                        <img src="https://politicsandwar.com/img/resources/munitions.png" class="resource-icon" alt="Munitions">
+                        <input type="number" id="base-munitions" value="720" class="chart-input" oninput="calculate()">
+                    </div>
+                    <div class="chart-cell">
+                        <img src="https://politicsandwar.com/img/resources/steel.png" class="resource-icon" alt="Steel">
+                        <input type="number" id="base-steel" value="500" class="chart-input" oninput="calculate()">
+                    </div>
+                    <div class="chart-cell">
+                        <img src="https://politicsandwar.com/img/resources/aluminum.png" class="resource-icon" alt="Aluminum">
+                        <input type="number" id="base-aluminum" value="400" class="chart-input" oninput="calculate()">
+                    </div>
+                </div>
+                <p class="text-[10px] text-center text-slate-400 mt-3 font-bold uppercase tracking-wider italic">Note: Values in the black-bordered chart above are per-city and editable.</p>
+            </div>
+
+            <!-- Results Table -->
+            <div class="border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+                <div class="bg-slate-50 px-6 py-4 border-b border-slate-200 flex justify-between items-center">
+                    <h2 class="font-black text-slate-800 uppercase text-sm tracking-widest" id="targetHeader">Inventory Checklist</h2>
+                    <button onclick="copyToClipboard()" class="bg-slate-900 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-slate-700 transition-colors flex items-center gap-2">
+                        <span>Copy Summary</span>
+                    </button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-white text-slate-400 uppercase text-[10px] font-black tracking-[0.15em]">
+                                <th class="p-6 border-b">Resource</th>
+                                <th class="p-6 border-b">Required</th>
+                                <th class="p-6 border-b">Current</th>
+                                <th class="p-6 border-b text-right">Balance</th>
+                            </tr>
+                        </thead>
+                        <tbody id="calculatorRows"></tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="bg-slate-50 border-t border-slate-200 p-8">
+            <div class="flex flex-col items-center gap-6">
+                <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest max-w-md text-center">
+                    Green indicates a surplus, Red indicates a deficiency.
+                </p>
+                <img src="https://i.ibb.co/gskhbdV/APE-TKR-GIF.gif" alt="APE TKR" class="h-48 w-auto rounded shadow-lg filter transition-all">
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        const resources = [
+            { id: 'money', label: 'Money', icon: '$', emoji: '💰', isImage: false, isMoney: true },
+            { id: 'food', label: 'Food', icon: 'https://politicsandwar.com/img/icons/16/steak_meat.png', emoji: '🍞', isImage: true },
+            { id: 'uranium', label: 'Uranium', icon: 'https://politicsandwar.com/img/resources/uranium.png', emoji: '☢️', isImage: true },
+            { id: 'gasoline', label: 'Gasoline', icon: 'https://politicsandwar.com/img/resources/gasoline.png', emoji: '⛽', isImage: true },
+            { id: 'munitions', label: 'Munitions', icon: 'https://politicsandwar.com/img/resources/munitions.png', emoji: '🧨', isImage: true },
+            { id: 'steel', label: 'Steel', icon: 'https://politicsandwar.com/img/resources/steel.png', emoji: '🔩', isImage: true },
+            { id: 'aluminum', label: 'Aluminum', icon: 'https://politicsandwar.com/img/resources/aluminum.png', emoji: '🖇️', isImage: true }
+        ];
+
+        function init() {
+            const container = document.getElementById('calculatorRows');
+            resources.forEach(res => {
+                let iconHtml = "";
+                if (res.isMoney) {
+                    iconHtml = `<span class="money-symbol" style="width: 20px; text-align: center; display: inline-block;">$</span>`;
+                } else {
+                    iconHtml = `<img src="${res.icon}" class="resource-icon" alt="${res.label}">`;
+                }
+
+                const row = document.createElement('tr');
+                row.className = "group hover:bg-slate-50 transition-colors";
+                row.innerHTML = `
+                    <td class="p-6 border-b">
+                        <div class="flex items-center gap-3">
+                            ${iconHtml}
+                            <span class="font-bold text-slate-700">${res.label}</span>
+                        </div>
+                    </td>
+                    <td class="p-6 border-b text-slate-400 font-mono font-bold text-sm" id="target-${res.id}">0</td>
+                    <td class="p-6 border-b">
+                        <div class="relative">
+                            <input type="number" id="input-${res.id}" placeholder="0" 
+                                   class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded text-sm font-bold focus:ring-2 focus:ring-blue-500 outline-none"
+                                   oninput="calculate()">
+                        </div>
+                    </td>
+                    <td class="p-6 border-b text-right font-bold font-mono text-sm" id="result-${res.id}">-</td>
+                `;
+                container.appendChild(row);
+            });
+            calculate();
+        }
+
+        function calculate() {
+            const cityCount = Math.max(0, parseInt(document.getElementById('cityCount').value) || 0);
+            const headerEl = document.getElementById('targetHeader');
+            headerEl.textContent = `Requirements for ${cityCount} ${cityCount === 1 ? 'City' : 'Cities'}`;
+
+            resources.forEach(res => {
+                const baseVal = parseFloat(document.getElementById(`base-${res.id}`).value) || 0;
+                const target = baseVal * cityCount;
+                const inputVal = document.getElementById(`input-${res.id}`).value;
+                const resultEl = document.getElementById(`result-${res.id}`);
+                
+                document.getElementById(`target-${res.id}`).textContent = target.toLocaleString();
+
+                if (inputVal === "") {
+                    resultEl.textContent = "WAITING";
+                    resultEl.className = "p-6 border-b text-right font-bold font-mono text-xs text-slate-300 tracking-widest";
+                    return;
+                }
+
+                const current = parseFloat(inputVal) || 0;
+                const diff = current - target;
+                resultEl.textContent = (diff >= 0 ? "+" : "") + diff.toLocaleString();
+                resultEl.className = diff >= 0 
+                    ? "p-6 border-b text-right font-bold font-mono text-sm text-emerald-500" 
+                    : "p-6 border-b text-right font-bold font-mono text-sm text-rose-500";
+            });
+        }
+
+        function showToast() {
+            const toast = document.getElementById('toast');
+            toast.classList.remove('toast-visible');
+            void toast.offsetWidth; // trigger reflow
+            toast.classList.add('toast-visible');
+            
+            setTimeout(() => {
+                toast.classList.remove('toast-visible');
+            }, 2000);
+        }
+
+        function copyToClipboard() {
+            const cityCount = document.getElementById('cityCount').value;
+            let text = `📋 **WARCHEST CHECKLIST (${cityCount} Cities)**\n`;
+            resources.forEach(res => {
+                const target = document.getElementById(`target-${res.id}`).textContent;
+                const current = (document.getElementById(`input-${res.id}`).value || '0').toLocaleString();
+                const status = document.getElementById(`result-${res.id}`).textContent;
+                text += `${res.emoji} ${res.label}: ${parseFloat(current).toLocaleString()}/${target} (${status})\n`;
+            });
+            
+            const textArea = document.createElement("textarea");
+            textArea.value = text;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+            showToast();
+        }
+
+        document.getElementById('cityCount').addEventListener('input', calculate);
+        init();
+    </script>
+</body>
+</html>
