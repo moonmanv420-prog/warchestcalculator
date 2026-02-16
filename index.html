@@ -192,7 +192,7 @@
                                 <th class="p-6 border-b">Resource</th>
                                 <th class="p-6 border-b">Required</th>
                                 <th class="p-6 border-b">Current</th>
-                                <th class="p-6 border-b text-right">Balance</th>
+                                <th class="p-6 border-b text-right">Surplus/Missing</th>
                             </tr>
                         </thead>
                         <tbody id="calculatorRows"></tbody>
@@ -205,7 +205,7 @@
         <footer class="bg-slate-50 border-t border-slate-200 p-8">
             <div class="flex flex-col items-center gap-6">
                 <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest max-w-md text-center">
-                    Green indicates a surplus, Red indicates a deficiency.
+                    Note: Green indicates a surplus, Red indicates a missing, If it shows 0 it means you have the exact amount.
                 </p>
                 <img src="https://i.ibb.co/gskhbdV/APE-TKR-GIF.gif" alt="APE TKR" class="h-48 w-auto rounded shadow-lg filter transition-all">
             </div>
@@ -278,10 +278,16 @@
 
                 const current = parseFloat(inputVal) || 0;
                 const diff = current - target;
-                resultEl.textContent = (diff >= 0 ? "+" : "") + diff.toLocaleString();
-                resultEl.className = diff >= 0 
-                    ? "p-6 border-b text-right font-bold font-mono text-sm text-emerald-500" 
-                    : "p-6 border-b text-right font-bold font-mono text-sm text-rose-500";
+                
+                resultEl.textContent = (diff > 0 ? "+" : "") + diff.toLocaleString();
+                
+                if (diff > 0) {
+                    resultEl.className = "p-6 border-b text-right font-bold font-mono text-sm text-emerald-500";
+                } else if (diff < 0) {
+                    resultEl.className = "p-6 border-b text-right font-bold font-mono text-sm text-rose-500";
+                } else {
+                    resultEl.className = "p-6 border-b text-right font-bold font-mono text-sm text-slate-400";
+                }
             });
         }
 
@@ -301,9 +307,10 @@
             let text = `📋 **WARCHEST CHECKLIST (${cityCount} Cities)**\n`;
             resources.forEach(res => {
                 const target = document.getElementById(`target-${res.id}`).textContent;
-                const current = (document.getElementById(`input-${res.id}`).value || '0').toLocaleString();
+                const currentInput = document.getElementById(`input-${res.id}`).value || '0';
+                const current = parseFloat(currentInput).toLocaleString();
                 const status = document.getElementById(`result-${res.id}`).textContent;
-                text += `${res.emoji} ${res.label}: ${parseFloat(current).toLocaleString()}/${target} (${status})\n`;
+                text += `${res.emoji} ${res.label}: ${current}/${target} (${status})\n`;
             });
             
             const textArea = document.createElement("textarea");
@@ -319,6 +326,4 @@
         init();
     </script>
 </body>
-
 </html>
-
